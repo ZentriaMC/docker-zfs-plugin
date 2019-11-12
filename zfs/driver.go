@@ -6,19 +6,18 @@ import (
 
 	"github.com/clinta/go-zfs"
 	"github.com/docker/go-plugins-helpers/volume"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 )
 
-//ZfsDriver implements the plugin helpers volume.Driver interface for zfs
+// ZfsDriver implements the plugin helpers volume.Driver interface for zfs
 type ZfsDriver struct {
 	volume.Driver
-	rds []*zfs.Dataset //root dataset
+	rds []*zfs.Dataset // root dataset
 }
 
-//NewZfsDriver returns the plugin driver object
+// NewZfsDriver returns the plugin driver object
 func NewZfsDriver(dss ...string) (*ZfsDriver, error) {
-	log.SetLevel(log.DebugLevel)
-	log.Debug("Creating new ZfsDriver.")
+	zap.L().Debug("creating new ZFSDriver")
 
 	zd := &ZfsDriver{}
 	if len(dss) < 1 {
@@ -28,13 +27,13 @@ func NewZfsDriver(dss ...string) (*ZfsDriver, error) {
 		if !zfs.DatasetExists(ds) {
 			_, err := zfs.CreateDatasetRecursive(ds, make(map[string]string))
 			if err != nil {
-				log.Error("Failed to create root dataset.")
+				zap.L().Error("failed to create root dataset", zap.String("ds", ds), zap.Error(err))
 				return nil, err
 			}
 		}
 		rds, err := zfs.GetDataset(ds)
 		if err != nil {
-			log.Error("Failed to get root dataset.")
+			zap.L().Error("failed to get root dataset", zap.String("ds", ds), zap.Error(err))
 			return nil, err
 		}
 		zd.rds = append(zd.rds, rds)
@@ -43,9 +42,9 @@ func NewZfsDriver(dss ...string) (*ZfsDriver, error) {
 	return zd, nil
 }
 
-//Create creates a new zfs dataset for a volume
+// Create creates a new zfs dataset for a volume
 func (zd *ZfsDriver) Create(req *volume.CreateRequest) error {
-	log.WithField("Request", req).Debug("Create")
+	zap.L().Debug("Create", zap.String("Name", req.Name), zap.Reflect("Options", req.Options))
 
 	if zfs.DatasetExists(req.Name) {
 		return fmt.Errorf("volume already exists")
@@ -55,9 +54,9 @@ func (zd *ZfsDriver) Create(req *volume.CreateRequest) error {
 	return err
 }
 
-//List returns a list of zfs volumes on this host
+// List returns a list of zfs volumes on this host
 func (zd *ZfsDriver) List() (*volume.ListResponse, error) {
-	log.Debug("List")
+	zap.L().Debug("List")
 	var vols []*volume.Volume
 
 	for _, rds := range zd.rds {
@@ -71,7 +70,7 @@ func (zd *ZfsDriver) List() (*volume.ListResponse, error) {
 			var mp string
 			mp, err = ds.GetMountpoint()
 			if err != nil {
-				log.WithField("name", ds.Name).Error("Failed to get mountpoint from dataset")
+				zap.L().Error("failed to get mountpoint from dataset", zap.String("Name", ds.Name))
 				continue
 			}
 			vols = append(vols, &volume.Volume{Name: ds.Name, Mountpoint: mp})
@@ -81,10 +80,10 @@ func (zd *ZfsDriver) List() (*volume.ListResponse, error) {
 	return &volume.ListResponse{Volumes: vols}, nil
 }
 
-//Get returns the volume.Volume{} object for the requested volume
-//nolint: dupl
+// Get returns the volume.Volume{} object for the requested volume
+// nolint: dupl
 func (zd *ZfsDriver) Get(req *volume.GetRequest) (*volume.GetResponse, error) {
-	log.WithField("Request", req).Debug("Get")
+	zap.L().Debug("Get", zap.String("Name", req.Name))
 
 	v, err := zd.getVolume(req.Name)
 	if err != nil {
@@ -107,7 +106,7 @@ func (zd *ZfsDriver) getVolume(name string) (*volume.Volume, error) {
 
 	ts, err := ds.GetCreation()
 	if err != nil {
-		log.WithError(err).Error("Failed to get creation property from zfs dataset")
+		zap.L().Error("failed to get creation property from zfs dataset", zap.Error(err))
 		return &volume.Volume{Name: name, Mountpoint: mp}, nil
 	}
 
@@ -123,9 +122,9 @@ func (zd *ZfsDriver) getMP(name string) (string, error) {
 	return ds.GetMountpoint()
 }
 
-//Remove destroys a zfs dataset for a volume
+// Remove destroys a zfs dataset for a volume
 func (zd *ZfsDriver) Remove(req *volume.RemoveRequest) error {
-	log.WithField("Request", req).Debug("Remove")
+	zap.L().Debug("Remove", zap.String("Name", req.Name))
 
 	ds, err := zfs.GetDataset(req.Name)
 	if err != nil {
@@ -135,10 +134,9 @@ func (zd *ZfsDriver) Remove(req *volume.RemoveRequest) error {
 	return ds.Destroy()
 }
 
-//Path returns the mountpoint of a volume
-//nolint: dupl
+// Path returns the mountpoint of a volume
 func (zd *ZfsDriver) Path(req *volume.PathRequest) (*volume.PathResponse, error) {
-	log.WithField("Request", req).Debug("Path")
+	zap.L().Debug("Path", zap.String("Name", req.Name))
 
 	mp, err := zd.getMP(req.Name)
 	if err != nil {
@@ -148,10 +146,9 @@ func (zd *ZfsDriver) Path(req *volume.PathRequest) (*volume.PathResponse, error)
 	return &volume.PathResponse{Mountpoint: mp}, nil
 }
 
-//Mount returns the mountpoint of the zfs volume
-//nolint: dupl
+// Mount returns the mountpoint of the zfs volume
 func (zd *ZfsDriver) Mount(req *volume.MountRequest) (*volume.MountResponse, error) {
-	log.WithField("Request", req).Debug("Mount")
+	zap.L().Debug("Mount", zap.String("ID", req.ID), zap.String("Name", req.Name))
 	mp, err := zd.getMP(req.Name)
 	if err != nil {
 		return nil, err
@@ -160,14 +157,14 @@ func (zd *ZfsDriver) Mount(req *volume.MountRequest) (*volume.MountResponse, err
 	return &volume.MountResponse{Mountpoint: mp}, nil
 }
 
-//Unmount does nothing because a zfs dataset need not be unmounted
+// Unmount does nothing because a zfs dataset need not be unmounted
 func (zd *ZfsDriver) Unmount(req *volume.UnmountRequest) error {
-	log.WithField("Request", req).Debug("Unmount")
+	zap.L().Debug("Unount", zap.String("ID", req.ID), zap.String("Name", req.Name))
 	return nil
 }
 
 //Capabilities sets the scope to local as this is a local only driver
 func (zd *ZfsDriver) Capabilities() *volume.CapabilitiesResponse {
-	log.Debug("Capabilities")
+	zap.L().Debug("Capabilities")
 	return &volume.CapabilitiesResponse{Capabilities: volume.Capability{Scope: "local"}}
 }
