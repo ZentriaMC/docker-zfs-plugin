@@ -7,6 +7,7 @@ import (
 	"github.com/clinta/go-zfs"
 	"github.com/docker/go-plugins-helpers/volume"
 	"go.uber.org/zap"
+	linuxproc "github.com/c9s/goprocinfo/linux"
 )
 
 // ZfsDriver implements the plugin helpers volume.Driver interface for zfs
@@ -119,7 +120,35 @@ func (zd *ZfsDriver) getMP(name string) (string, error) {
 		return "", err
 	}
 
-	return ds.GetMountpoint()
+	mp, err := ds.GetMountpoint()
+	if err != nil {
+		return "", fmt.Errorf("Unable to get dataset '%s' mount point: %w", name, err)
+	}
+
+	if mp == "none" {
+		// Parent dataset must be mounted somewhere before being able to bind them
+		// to containers first
+		zap.L().Debug("dataset has no mount point", zap.String("Name", name))
+		return "", fmt.Errorf("Dataset '%s' (or its parent) does not have mount point", name)
+	}
+	if mp == "legacy" {
+		// Must look up dataset mount point manually
+		// TODO: cache?
+		// TODO: auto mount?
+		zap.L().Warn("dataset has legacy mount point and requires lookup", zap.String("Name", name))
+		mounts, err := linuxproc.ReadMounts("/proc/mounts")
+		if err != nil {
+			return "", fmt.Errorf("Unable to read /proc/mounts to figure out dataset '%s' mount point: %w", name, err)
+		}
+		for _, mnt := range mounts.Mounts {
+			if mnt.FSType == "zfs" && mnt.Device == name {
+				return mnt.MountPoint, nil
+			}
+		}
+		return "", fmt.Errorf("Dataset '%s' has legacy mountpoint, but it is not mounted", name)
+	}
+
+	return mp, nil
 }
 
 // Remove destroys a zfs dataset for a volume
@@ -151,8 +180,11 @@ func (zd *ZfsDriver) Mount(req *volume.MountRequest) (*volume.MountResponse, err
 	zap.L().Debug("Mount", zap.String("ID", req.ID), zap.String("Name", req.Name))
 	mp, err := zd.getMP(req.Name)
 	if err != nil {
+		zap.L().Error("failed to get dataset mount point", zap.String("Name", req.Name), zap.Error(err))
 		return nil, err
 	}
+
+	zap.L().Debug("dataset mountpoint", zap.String("Name", req.Name), zap.String("mountpoint", mp))
 
 	return &volume.MountResponse{Mountpoint: mp}, nil
 }
