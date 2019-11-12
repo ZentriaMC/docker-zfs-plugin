@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/TrilliumIT/docker-zfs-plugin/zfs"
+	"github.com/mikroskeem/docker-zfs-plugin/zfs"
 	"github.com/docker/go-plugins-helpers/volume"
 	"github.com/urfave/cli"
 )
