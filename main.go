@@ -53,7 +53,7 @@ func Run(ctx *cli.Context) error {
 
 	// Redirect native logger to zap debug level
 	log.SetPrefix("")
-	log.SetFlags(0)
+	log.SetFlags(log.Llongfile)
 	log.SetOutput(NewZapLogWriter(ZapWriterLevelDebug))
 
 	d, err := zfsdriver.NewZfsDriver(ctx.StringSlice("dataset-name")...)
