@@ -159,7 +159,7 @@ func (zd *ZfsDriver) Mount(req *volume.MountRequest) (*volume.MountResponse, err
 
 // Unmount does nothing because a zfs dataset need not be unmounted
 func (zd *ZfsDriver) Unmount(req *volume.UnmountRequest) error {
-	zap.L().Debug("Unount", zap.String("ID", req.ID), zap.String("Name", req.Name))
+	zap.L().Debug("Unmount", zap.String("ID", req.ID), zap.String("Name", req.Name))
 	return nil
 }
 
