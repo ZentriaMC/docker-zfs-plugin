@@ -1,10 +1,13 @@
 [Unit]
-Description=zfs plugin
-After=zfs-mount.service zfs-import-cache.service
+Description=Docker ZFS volumes plugin
 Before=docker.service
-Requires=zfs-mount.service zfs-import-cache.service
 
-#Recommended condition for each pool you intend to use
+# Make sure that we start after ZFS has been set up. At minimum, importing the cache is
+# usually required to get ZFS up and running, zfs-mount.service is not used in certain configurations
+After=zfs-mount.service zfs-import-cache.service
+Requires=zfs-import-cache.service
+
+# Recommended condition for each pool you intend to use
 ConditionPathIsMountPoint=/var/lib/docker-volumes/zfs/tank
 
 
