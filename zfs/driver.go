@@ -18,8 +18,18 @@ type ZfsDriver struct {
 }
 
 // NewZfsDriver returns the plugin driver object
-func NewZfsDriver(dss ...string) (*ZfsDriver, error) {
-	zap.L().Debug("creating new ZFSDriver")
+func NewZfsDriver(datasets ...string) (*ZfsDriver, error) {
+	// Filter out duplicate datasets to avoid funky behaviour
+	dss := []string{}
+	seenKeys := make(map[string]bool)
+	for _, e := range datasets {
+		if _, v := seenKeys[e]; !v {
+			seenKeys[e] = true
+			dss = append(dss, e)
+		}
+	}
+
+	zap.L().Debug("creating new ZFSDriver", zap.Strings("dss", dss))
 
 	zd := &ZfsDriver{}
 	if len(dss) < 1 {
