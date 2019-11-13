@@ -5,10 +5,10 @@ import (
 	"strings"
 	"time"
 
+	linuxproc "github.com/c9s/goprocinfo/linux"
 	"github.com/clinta/go-zfs"
 	"github.com/docker/go-plugins-helpers/volume"
 	"go.uber.org/zap"
-	linuxproc "github.com/c9s/goprocinfo/linux"
 )
 
 // ZfsDriver implements the plugin helpers volume.Driver interface for zfs
@@ -49,7 +49,7 @@ func NewZfsDriver(dss ...string) (*ZfsDriver, error) {
 func (zd *ZfsDriver) isRootDatasetDefined(name string) (isValid bool) {
 	isValid = false
 	for _, rds := range zd.rds {
-		if strings.HasPrefix(name, rds.Name + "/") {
+		if strings.HasPrefix(name, rds.Name+"/") {
 			isValid = true
 			return
 		}
