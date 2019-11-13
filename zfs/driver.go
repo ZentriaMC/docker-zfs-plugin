@@ -220,12 +220,21 @@ func (zd *ZfsDriver) Remove(req *volume.RemoveRequest) error {
 		return fmt.Errorf("invalid parent dataset")
 	}
 
-	ds, err := zfs.GetDataset(req.Name)
-	if err != nil {
+	if _, err := zfs.GetDataset(req.Name); err != nil {
 		return err
 	}
 
-	return ds.Destroy()
+	err := zfscmd.Destroy(req.Name, &zfscmd.DestroyOpts{
+		DestroyChildren: false,
+		DestroyClones:   false,
+		ForceUnmount:    false,
+		Defer:           false,
+	})
+	if err != nil {
+		zfsErr := err.(*zfscmd.ZFSError)
+		return fmt.Errorf("Failed to destroy volume '%s': %s", req.Name, zfsErr.Stderr)
+	}
+	return nil
 }
 
 // Path returns the mountpoint of a volume
