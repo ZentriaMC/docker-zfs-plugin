@@ -6,7 +6,8 @@ import (
 	"time"
 
 	linuxproc "github.com/c9s/goprocinfo/linux"
-	"github.com/clinta/go-zfs"
+	zfs "github.com/clinta/go-zfs"
+	zfscmd "github.com/clinta/go-zfs/cmd"
 	"github.com/docker/go-plugins-helpers/volume"
 	"go.uber.org/zap"
 )
@@ -78,6 +79,36 @@ func (zd *ZfsDriver) Create(req *volume.CreateRequest) error {
 
 	if zfs.DatasetExists(req.Name) {
 		return fmt.Errorf("volume already exists")
+	}
+
+	// Check if snapshot should be cloned
+	if snapshotName, ok := req.Options["from-snapshot"]; ok {
+		// ZFS does not understand this option, nuke it
+		delete(req.Options, "from-snapshot")
+
+		// Find the snapshot
+		snapshot, err := zfs.GetSnapshot(snapshotName)
+		if err != nil {
+			return err
+		}
+
+		// Clone dataset
+		if _, err := snapshot.Clone(req.Name); err != nil {
+			return fmt.Errorf("Failed to clone snapshot '%s': %w", snapshotName, err)
+		}
+
+		// Set options
+		if len(req.Options) > 0 {
+			zap.L().Debug("setting options to cloned snapshot", zap.String("Name", req.Name), zap.Reflect("Options", req.Options))
+			if err := zfscmd.Set(req.Name, req.Options); err != nil {
+				// XXX: cannot use '%w' here, causes stack overflow!
+				// return fmt.Errorf("Failed to set volume options: %s", err)
+				zfsErr := err.(*zfscmd.ZFSError)
+				return fmt.Errorf("Failed to set volume options: %s", zfsErr.Stderr)
+			}
+		}
+
+		return nil
 	}
 
 	_, err := zfs.CreateDatasetRecursive(req.Name, req.Options)
