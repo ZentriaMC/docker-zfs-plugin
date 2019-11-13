@@ -2,6 +2,7 @@ package zfsdriver
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/clinta/go-zfs"
@@ -43,9 +44,27 @@ func NewZfsDriver(dss ...string) (*ZfsDriver, error) {
 	return zd, nil
 }
 
+// isRootDatasetDefined checks if name is a child of any defined root dataset in this driver
+// instance.
+func (zd *ZfsDriver) isRootDatasetDefined(name string) (isValid bool) {
+	isValid = false
+	for _, rds := range zd.rds {
+		if strings.HasPrefix(name, rds.Name + "/") {
+			isValid = true
+			return
+		}
+	}
+	return
+}
+
 // Create creates a new zfs dataset for a volume
 func (zd *ZfsDriver) Create(req *volume.CreateRequest) error {
 	zap.L().Debug("Create", zap.String("Name", req.Name), zap.Reflect("Options", req.Options))
+
+	// Check root dataset
+	if !zd.isRootDatasetDefined(req.Name) {
+		return fmt.Errorf("invalid parent dataset")
+	}
 
 	if zfs.DatasetExists(req.Name) {
 		return fmt.Errorf("volume already exists")
@@ -154,6 +173,11 @@ func (zd *ZfsDriver) getMP(name string) (string, error) {
 // Remove destroys a zfs dataset for a volume
 func (zd *ZfsDriver) Remove(req *volume.RemoveRequest) error {
 	zap.L().Debug("Remove", zap.String("Name", req.Name))
+
+	// Check root dataset
+	if !zd.isRootDatasetDefined(req.Name) {
+		return fmt.Errorf("invalid parent dataset")
+	}
 
 	ds, err := zfs.GetDataset(req.Name)
 	if err != nil {
