@@ -49,7 +49,7 @@ func Run(ctx *cli.Context) error {
 	if err := configureLogging(ctx.Bool("debug")); err != nil {
 		return err
 	}
-	defer zap.L().Sync()
+	defer func() { _ = zap.L().Sync() }()
 
 	// Redirect native logger to zap debug level
 	log.SetPrefix("")
