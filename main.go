@@ -1,19 +1,27 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
+	"github.com/coreos/go-systemd/activation"
 	"github.com/docker/go-plugins-helpers/volume"
-	"github.com/mikroskeem/docker-zfs-plugin/zfs"
+	zfsdriver "github.com/mikroskeem/docker-zfs-plugin/zfs"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
 const (
-	version = "1.0.3"
+	version         = "1.0.5"
+	shutdownTimeout = 10 * time.Second
 )
 
 func main() {
@@ -29,6 +37,10 @@ func main() {
 		cli.BoolFlag{
 			Name:  "debug",
 			Usage: "Whether to run plugin with debugging logging enabled or not",
+		},
+		cli.BoolFlag{
+			Name:  "verbose",
+			Usage: "verbose output.",
 		},
 	}
 	app.Action = Run
@@ -46,7 +58,7 @@ func Run(ctx *cli.Context) error {
 	}
 
 	// Configure logging
-	if err := configureLogging(ctx.Bool("debug")); err != nil {
+	if err := configureLogging(ctx.Bool("debug") || ctx.Bool("verbose")); err != nil {
 		return err
 	}
 	defer func() { _ = zap.L().Sync() }()
@@ -61,9 +73,46 @@ func Run(ctx *cli.Context) error {
 		return err
 	}
 	h := volume.NewHandler(d)
+	errCh := make(chan error)
 
-	zap.L().Info("Ready to serve")
-	return h.ServeUnix("zfs", 0)
+	listeners, _ := activation.Listeners() // wtf coreos, this funciton never returns errors
+	if len(listeners) > 1 {
+		zap.L().Warn("driver does not support multiple sockets")
+	}
+	if len(listeners) == 0 {
+		zap.L().Debug("launching volume handler.")
+		go func() { errCh <- h.ServeUnix("zfs", 0) }()
+	} else {
+		l := listeners[0]
+		zap.L().Debug("launching volume handler", zap.String("listener", l.Addr().String()))
+		go func() { errCh <- h.Serve(l) }()
+	}
+
+	c := make(chan os.Signal)
+	defer close(c)
+	signal.Notify(c, os.Interrupt)
+	signal.Notify(c, syscall.SIGTERM)
+
+	select {
+	case err = <-errCh:
+		zap.L().Error("error running handler", zap.Error(err))
+		close(errCh)
+	case <-c:
+	}
+
+	toCtx, toCtxCancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	defer toCtxCancel()
+	if sErr := h.Shutdown(toCtx); sErr != nil {
+		err = sErr
+		zap.L().Error("error shutting down handler", zap.Error(err))
+	}
+
+	if hErr := <-errCh; hErr != nil && !errors.Is(hErr, http.ErrServerClosed) {
+		err = hErr
+		zap.L().Error("error in handler after shutdown", zap.Error(err))
+	}
+
+	return err
 }
 
 func configureLogging(debug bool) error {
