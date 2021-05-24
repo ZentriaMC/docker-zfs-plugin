@@ -45,5 +45,18 @@ in
       requires = [ "zfs.target" ];
       path = [ pkgs.zfs ];
     };
+
+    systemd.sockets.docker-zfs-plugin = mkIf zfs-cfg.enable {
+      description = "docker-zfs-plugin listen socket";
+      wantedBy = [ "sockets.target" ];
+      requires = [ "docker.socket" ];
+
+      socketConfig = {
+        ListenStream = "/run/docker/plugins/zfs.sock"; # TODO: configurable path?
+        SocketMode = "0660";
+        SocketUser = "root";
+        SocketGroup = "root";
+      };
+    };
   };
 }
