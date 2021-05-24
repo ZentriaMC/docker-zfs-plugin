@@ -11,12 +11,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/coreos/go-systemd/activation"
+	"github.com/coreos/go-systemd/v22/activation"
 	"github.com/docker/go-plugins-helpers/volume"
-	zfsdriver "github.com/mikroskeem/docker-zfs-plugin/zfs"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	zfsdriver "github.com/ZentriaMC/docker-zfs-plugin/zfs"
 )
 
 const (
