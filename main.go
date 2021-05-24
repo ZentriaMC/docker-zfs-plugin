@@ -13,7 +13,7 @@ import (
 
 	"github.com/coreos/go-systemd/v22/activation"
 	"github.com/docker/go-plugins-helpers/volume"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
@@ -26,28 +26,25 @@ const (
 )
 
 func main() {
-	app := cli.NewApp()
-	app.Name = "docker-zfs-plugin"
-	app.Usage = "Docker ZFS Plugin"
-	app.Version = version
-	app.Flags = []cli.Flag{
-		cli.StringSliceFlag{
-			Name:  "dataset-name",
-			Usage: "Name of the ZFS dataset to be used. It will be created if it doesn't exist.",
+	app := &cli.App{
+		Name:    "docker-zfs-plugin",
+		Usage:   "Docker ZFS Plugin",
+		Version: version,
+		Flags: []cli.Flag{
+			&cli.StringSliceFlag{
+				Name:  "dataset-name",
+				Usage: "Name of the ZFS dataset to be used. It will be created if it doesn't exist.",
+			},
+			&cli.BoolFlag{
+				Name:    "debug",
+				Usage:   "Whether to run plugin with debugging logging enabled or not",
+				Aliases: []string{"verbose"},
+			},
 		},
-		cli.BoolFlag{
-			Name:  "debug",
-			Usage: "Whether to run plugin with debugging logging enabled or not",
-		},
-		cli.BoolFlag{
-			Name:  "verbose",
-			Usage: "verbose output.",
-		},
+		Action: Run,
 	}
-	app.Action = Run
 
-	err := app.Run(os.Args)
-	if err != nil {
+	if err := app.Run(os.Args); err != nil {
 		panic(err)
 	}
 }
@@ -59,7 +56,7 @@ func Run(ctx *cli.Context) error {
 	}
 
 	// Configure logging
-	if err := configureLogging(ctx.Bool("debug") || ctx.Bool("verbose")); err != nil {
+	if err := configureLogging(ctx.Bool("debug")); err != nil {
 		return err
 	}
 	defer func() { _ = zap.L().Sync() }()

@@ -12,7 +12,7 @@ require (
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-plugins-helpers v0.0.0-20200102110956-c9a8a2d92ccc
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/urfave/cli v1.22.5
+	github.com/urfave/cli/v2 v2.3.0
 	go.uber.org/multierr v1.7.0 // indirect
 	go.uber.org/zap v1.16.0
 	golang.org/x/net v0.0.0-20210521195947-fe42d452be8f // indirect
