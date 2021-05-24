@@ -40,9 +40,8 @@ in
           + "${concatMapStrings (x: " --dataset-name " + x) zfs-cfg.datasets}";
       };
 
-      before = [ "docker.service" ];
-      wantedBy = [ "docker.service" ];
-      requires = [ "zfs.target" ];
+      after = [ "docker-zfs-plugin.socket" ];
+      requires = [ "zfs.target" "docker-zfs-plugin.socket" ];
       path = [ pkgs.zfs ];
     };
 
@@ -50,6 +49,7 @@ in
       description = "docker-zfs-plugin listen socket";
       wantedBy = [ "sockets.target" ];
       requires = [ "docker.socket" ];
+      before = [ "docker.service" ];
 
       socketConfig = {
         ListenStream = "/run/docker/plugins/zfs.sock"; # TODO: configurable path?
