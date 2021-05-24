@@ -1,1 +1,3 @@
-docker-zfs-plugin
+/.direnv
+/.envrc
+/docker-zfs-plugin
