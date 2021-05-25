@@ -7,6 +7,7 @@ import (
 
 	linuxproc "github.com/c9s/goprocinfo/linux"
 	zfs "github.com/clinta/go-zfs"
+	_ "github.com/bicomsystems/go-libzfs"
 	zfscmd "github.com/clinta/go-zfs/cmd"
 	"github.com/docker/go-plugins-helpers/volume"
 	"go.uber.org/zap"

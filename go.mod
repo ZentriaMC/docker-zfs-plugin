@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/Microsoft/go-winio v0.5.0 // indirect
+	github.com/bicomsystems/go-libzfs v0.3.5
 	github.com/c9s/goprocinfo v0.0.0-20210130143923-c95fcf8c64a8
 	github.com/clinta/go-zfs v0.0.0-20181025145938-e5fe14d9dcb7
 	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf // indirect
@@ -20,3 +21,5 @@ require (
 )
 
 replace github.com/docker/go-plugins-helpers => github.com/clinta/go-plugins-helpers v0.0.0-20200221140445-4667bb9f0ed5 // for shutdown
+
+replace github.com/bicomsystems/go-libzfs => github.com/bicomsystems/go-libzfs v0.3.4-0.20210120103208-f957d22f5c47

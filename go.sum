@@ -2,6 +2,8 @@ github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/Microsoft/go-winio v0.5.0 h1:Elr9Wn+sGKPlkaBvwu4mTrxtmOp3F3yV9qhaHbXGjwU=
 github.com/Microsoft/go-winio v0.5.0/go.mod h1:JPGBdM1cNvN/6ISo+n8V5iA4v8pBzdOpzfwIujj1a84=
+github.com/bicomsystems/go-libzfs v0.3.4-0.20210120103208-f957d22f5c47 h1:Z5A4xYh+tbYAJD1AQRVAX0e9pPprHAgSso1+Qv3w6HM=
+github.com/bicomsystems/go-libzfs v0.3.4-0.20210120103208-f957d22f5c47/go.mod h1:/ABUjxseIy72AxJV8ROgSfeZ5YA8/ZSp1mMzfDKi0Mw=
 github.com/c9s/goprocinfo v0.0.0-20210130143923-c95fcf8c64a8 h1:SjZ2GvvOononHOpK84APFuMvxqsk3tEIaKH/z4Rpu3g=
 github.com/c9s/goprocinfo v0.0.0-20210130143923-c95fcf8c64a8/go.mod h1:uEyr4WpAH4hio6LFriaPkL938XnrvLpNPmQHBdrmbIE=
 github.com/clinta/go-plugins-helpers v0.0.0-20200221140445-4667bb9f0ed5 h1:STA9F+EPT0+eLSpUYBAst5PJMgtPo1PNLqRYRyJtkK4=
