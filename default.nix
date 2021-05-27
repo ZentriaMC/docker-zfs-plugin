@@ -13,7 +13,7 @@ buildGoModule rec {
   vendorSha256 = "0sxcgw1hr7skl3x5jzzk8k3pcd99f2q3cycvqcakvbbrr3mxz35d";
   subPackages = [ "." ];
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Docker volume plugin for creating persistent volumes as dedicated zfs datasets.";
     homepage = "https://github.com/ZentriaMC/docker-zfs-plugin";
     license = licenses.mit;
