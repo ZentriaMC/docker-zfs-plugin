@@ -1,4 +1,4 @@
-self: super:
+final: prev:
 {
-  docker-zfs-plugin = super.callPackage ./.. { };
+  docker-zfs-plugin = final.callPackage ./.. { };
 }
