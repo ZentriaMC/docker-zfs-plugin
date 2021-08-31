@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -60,11 +59,6 @@ func Run(ctx *cli.Context) error {
 		return err
 	}
 	defer func() { _ = zap.L().Sync() }()
-
-	// Redirect native logger to zap debug level
-	log.SetPrefix("")
-	log.SetFlags(log.Llongfile)
-	log.SetOutput(NewZapLogWriter(ZapWriterLevelDebug))
 
 	d, err := zfsdriver.NewZfsDriver(ctx.StringSlice("dataset-name")...)
 	if err != nil {
@@ -138,6 +132,9 @@ func configureLogging(debug bool) error {
 	if debug {
 		zap.L().Debug("debug logging enabled")
 	}
+
+	// Redirect native logger to zap debug level
+	zap.RedirectStdLogAt(logger, zapcore.DebugLevel)
 
 	return nil
 }
