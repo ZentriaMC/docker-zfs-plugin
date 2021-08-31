@@ -134,7 +134,9 @@ func configureLogging(debug bool) error {
 	}
 
 	// Redirect native logger to zap debug level
-	zap.RedirectStdLogAt(logger, zapcore.DebugLevel)
+	if _, err := zap.RedirectStdLogAt(logger, zapcore.DebugLevel); err != nil {
+		return err
+	}
 
 	return nil
 }
