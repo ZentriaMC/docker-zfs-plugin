@@ -34,9 +34,8 @@ in
       description = "Docker volume plugin for creating persistent volumes as a dedicated zfs datasets.";
       serviceConfig = {
         Restart = "on-abnormal";
-
         ExecStart = "${pkgs.docker-zfs-plugin}/bin/docker-zfs-plugin "
-          + "${if (zfs-cfg.debug) then "--debug" else ""} "
+          + "${lib.optionalString zfs-cfg.debug "--debug"} "
           + "${concatMapStrings (x: " --dataset-name " + x) zfs-cfg.datasets}";
       };
 
