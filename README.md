@@ -2,6 +2,8 @@
 
 Docker volume plugin for creating persistent volumes as dedicated zfs datasets.
 
+This is a fork of [TrilliumIT/docker-zfs-plugin](https://github.com/TrilliumIT/docker-zfs-plugin)
+
 ## Installation
 
 Assuming you use NixOS
