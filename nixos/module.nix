@@ -9,6 +9,7 @@ in
     services.docker-zfs-plugin = {
       enable = mkEnableOption "docker-zfs-plugin";
       debug = mkEnableOption "debug";
+      snapshotOnCreate = mkEnableOption "snapshot-on-create";
 
       datasets = mkOption {
         type = types.listOf types.str;
@@ -36,6 +37,7 @@ in
         Restart = "on-abnormal";
         ExecStart = "${pkgs.docker-zfs-plugin}/bin/docker-zfs-plugin "
           + "${lib.optionalString zfs-cfg.debug "--debug"} "
+          + "${lib.optionalString zfs-cfg.snapshotOnCreate "--snapshot-on-create"} "
           + "${concatMapStrings (x: " --dataset-name " + x) zfs-cfg.datasets}";
       };
 
