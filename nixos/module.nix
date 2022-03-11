@@ -31,6 +31,10 @@ in
       }
     ];
 
+    nixpkgs.overlays = [
+      (import ./overlay.nix)
+    ];
+
     systemd.services.docker-zfs-plugin = mkIf zfs-cfg.enable {
       description = "Docker volume plugin for creating persistent volumes as a dedicated zfs datasets.";
       serviceConfig = {

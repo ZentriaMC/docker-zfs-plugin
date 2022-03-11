@@ -1,7 +1,6 @@
 { nixosTest
 , system ? "x86_64-linux"
 , dockerZfsPluginModule
-, dockerZfsPluginOverlay
 }:
 
 let
@@ -29,10 +28,6 @@ nixosTest {
     machine = { config, lib, pkgs, ... }: {
       imports = [
         dockerZfsPluginModule
-      ];
-
-      nixpkgs.overlays = [
-        dockerZfsPluginOverlay
       ];
 
       virtualisation.graphics = false;

@@ -27,7 +27,6 @@
         checks.vm = pkgs.callPackage ./test/vm.nix {
           inherit system;
           dockerZfsPluginModule = self.nixosModule;
-          dockerZfsPluginOverlay = self.overlay;
         };
       })) // (flake-utils.lib.eachSystem allSystems (system:
       let
