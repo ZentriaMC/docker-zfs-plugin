@@ -47,6 +47,7 @@ nixosTest {
       services.docker-zfs-plugin = {
         enable = true;
         debug = true;
+        snapshotOnCreate = true;
         datasets = [ "dpool/data" "dpool/legacy-data" ];
       };
 
@@ -63,11 +64,13 @@ nixosTest {
     # Create legacy ZFS volumes
     machine.succeed(
       "docker volume create --driver zfs dpool/legacy-data/zfstest",
-      "docker volume ls --format '{{ .Driver }}\t{{ .Name }}' | grep '^zfs' | grep -q 'dpool/legacy-data/zfstest$'"
+      "docker volume ls --format '{{ .Driver }}\t{{ .Name }}' | grep '^zfs' | grep -q 'dpool/legacy-data/zfstest$'",
+      "zfs list -H -p -s name -o name dpool/legacy-data/zfstest@initial &>/dev/null"
     )
     machine.succeed(
       "docker volume create --driver zfs dpool/data/zfstest",
-      "docker volume ls --format '{{ .Driver }}\t{{ .Name }}' | grep '^zfs' | grep -q 'dpool/data/zfstest$'"
+      "docker volume ls --format '{{ .Driver }}\t{{ .Name }}' | grep '^zfs' | grep -q 'dpool/data/zfstest$'",
+      "zfs list -H -p -s name -o name dpool/data/zfstest@initial &>/dev/null"
     )
     machine.succeed("docker system info -f '{{ .Plugins.Volume }}' | grep -q -F 'zfs'") # NOTE: appears only after zfs plugin is being used for at least once
 
