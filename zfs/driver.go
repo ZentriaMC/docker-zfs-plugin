@@ -120,7 +120,7 @@ func (zd *ZfsDriver) Create(req *volume.CreateRequest) (err error) {
 			}
 		}
 	} else {
-		if _, err = zfs.CreateDatasetRecursive(req.Name, req.Options); err != nil {
+		if ds, err = zfs.CreateDatasetRecursive(req.Name, req.Options); err != nil {
 			return
 		}
 	}
