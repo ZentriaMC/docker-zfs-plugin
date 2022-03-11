@@ -15,11 +15,14 @@ import (
 // ZfsDriver implements the plugin helpers volume.Driver interface for zfs
 type ZfsDriver struct {
 	volume.Driver
-	rds []*zfs.Dataset // root dataset
+	rds              []*zfs.Dataset // root dataset
+	snapshotOnCreate bool
 }
 
+const initialSnapshotName = "initial" // TODO: configurable?
+
 // NewZfsDriver returns the plugin driver object
-func NewZfsDriver(datasets ...string) (*ZfsDriver, error) {
+func NewZfsDriver(snapshotOnCreate bool, datasets ...string) (*ZfsDriver, error) {
 	// Filter out duplicate datasets to avoid funky behaviour
 	dss := []string{}
 	seenKeys := make(map[string]bool)
@@ -30,12 +33,15 @@ func NewZfsDriver(datasets ...string) (*ZfsDriver, error) {
 		}
 	}
 
-	zap.L().Debug("creating new ZFSDriver", zap.Strings("dss", dss))
+	zap.L().Debug("creating new ZFSDriver", zap.Strings("dss", dss), zap.Bool("snapshotOnCreate", snapshotOnCreate))
 
 	zd := &ZfsDriver{}
 	if len(dss) < 1 {
 		return nil, fmt.Errorf("No datasets specified")
 	}
+
+	zd.snapshotOnCreate = snapshotOnCreate
+
 	for _, ds := range dss {
 		if !zfs.DatasetExists(ds) {
 			_, err := zfs.CreateDatasetRecursive(ds, make(map[string]string))
@@ -69,17 +75,21 @@ func (zd *ZfsDriver) isRootDatasetDefined(name string) (isValid bool) {
 }
 
 // Create creates a new zfs dataset for a volume
-func (zd *ZfsDriver) Create(req *volume.CreateRequest) error {
+func (zd *ZfsDriver) Create(req *volume.CreateRequest) (err error) {
 	zap.L().Debug("Create", zap.String("Name", req.Name), zap.Reflect("Options", req.Options))
 
 	// Check root dataset
 	if !zd.isRootDatasetDefined(req.Name) {
-		return fmt.Errorf("invalid parent dataset")
+		err = fmt.Errorf("invalid parent dataset")
+		return
 	}
 
 	if zfs.DatasetExists(req.Name) {
-		return fmt.Errorf("volume already exists")
+		err = fmt.Errorf("volume already exists")
+		return
 	}
+
+	var ds *zfs.Dataset
 
 	// Check if snapshot should be cloned
 	if snapshotName, ok := req.Options["from-snapshot"]; ok {
@@ -87,32 +97,42 @@ func (zd *ZfsDriver) Create(req *volume.CreateRequest) error {
 		delete(req.Options, "from-snapshot")
 
 		// Find the snapshot
-		snapshot, err := zfs.GetSnapshot(snapshotName)
-		if err != nil {
-			return err
+		var snapshot *zfs.Snapshot
+		if snapshot, err = zfs.GetSnapshot(snapshotName); err != nil {
+			return
 		}
 
 		// Clone dataset
-		if _, err := snapshot.Clone(req.Name); err != nil {
-			return fmt.Errorf("Failed to clone snapshot '%s': %w", snapshotName, err)
+		if ds, err = snapshot.Clone(req.Name); err != nil {
+			err = fmt.Errorf("Failed to clone snapshot '%s': %w", snapshotName, err)
+			return
 		}
 
 		// Set options
 		if len(req.Options) > 0 {
 			zap.L().Debug("setting options to cloned snapshot", zap.String("Name", req.Name), zap.Reflect("Options", req.Options))
-			if err := zfscmd.Set(req.Name, req.Options); err != nil {
+			if err = zfscmd.Set(req.Name, req.Options); err != nil {
 				// XXX: cannot use '%w' here, causes stack overflow!
 				// return fmt.Errorf("Failed to set volume options: %s", err)
 				zfsErr := err.(*zfscmd.ZFSError)
-				return fmt.Errorf("Failed to set volume options: %s", zfsErr.Stderr)
+				err = fmt.Errorf("Failed to set volume options: %s", zfsErr.Stderr)
+				return
 			}
 		}
-
-		return nil
+	} else {
+		if ds, err = zfs.CreateDatasetRecursive(req.Name, req.Options); err != nil {
+			return
+		}
 	}
 
-	_, err := zfs.CreateDatasetRecursive(req.Name, req.Options)
-	return err
+	if zd.snapshotOnCreate {
+		if _, err = ds.Snapshot(initialSnapshotName); err != nil {
+			err = fmt.Errorf("failed to create initial snapshot for '%s': %w", req.Name, err)
+			return
+		}
+	}
+
+	return
 }
 
 // List returns a list of zfs volumes on this host

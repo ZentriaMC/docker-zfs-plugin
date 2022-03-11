@@ -39,6 +39,10 @@ func main() {
 				Usage:   "Whether to run plugin with debugging logging enabled or not",
 				Aliases: []string{"verbose"},
 			},
+			&cli.BoolFlag{
+				Name:  "snapshot-on-create",
+				Usage: "Whether to create a snapshot immediately after creating a new dataset",
+			},
 		},
 		Action: Run,
 	}
@@ -60,7 +64,7 @@ func Run(ctx *cli.Context) error {
 	}
 	defer func() { _ = zap.L().Sync() }()
 
-	d, err := zfsdriver.NewZfsDriver(ctx.StringSlice("dataset-name")...)
+	d, err := zfsdriver.NewZfsDriver(ctx.Bool("snapshot-on-create"), ctx.StringSlice("dataset-name")...)
 	if err != nil {
 		return err
 	}
