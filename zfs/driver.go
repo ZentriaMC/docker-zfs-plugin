@@ -2,6 +2,7 @@ package zfsdriver
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -9,17 +10,20 @@ import (
 	zfs "github.com/clinta/go-zfs"
 	zfscmd "github.com/clinta/go-zfs/cmd"
 	"github.com/docker/go-plugins-helpers/volume"
+	"github.com/moby/locker"
 	"go.uber.org/zap"
 )
 
 // ZfsDriver implements the plugin helpers volume.Driver interface for zfs
 type ZfsDriver struct {
 	volume.Driver
+	volumeLock       *locker.Locker
 	rds              []*zfs.Dataset // root dataset
 	snapshotOnCreate bool
 }
 
 const initialSnapshotName = "initial" // TODO: configurable?
+const zfsVolumesDir = "/var/lib/zfs-docker-volumes"
 
 // NewZfsDriver returns the plugin driver object
 func NewZfsDriver(snapshotOnCreate bool, datasets ...string) (*ZfsDriver, error) {
@@ -40,6 +44,7 @@ func NewZfsDriver(snapshotOnCreate bool, datasets ...string) (*ZfsDriver, error)
 		return nil, fmt.Errorf("No datasets specified")
 	}
 
+	zd.volumeLock = locker.New()
 	zd.snapshotOnCreate = snapshotOnCreate
 
 	for _, ds := range dss {
@@ -226,6 +231,7 @@ func (zd *ZfsDriver) getMP(name string) (string, error) {
 			}
 		}
 		return "", fmt.Errorf("Dataset '%s' has legacy mountpoint, but it is not mounted", name)
+		//mp = filepath.Join(zfsVolumesDir, hex256(name))
 	}
 
 	return mp, nil
@@ -280,12 +286,25 @@ func (zd *ZfsDriver) Mount(req *volume.MountRequest) (*volume.MountResponse, err
 
 	zap.L().Debug("dataset mountpoint", zap.String("Name", req.Name), zap.String("mountpoint", mp))
 
+	// Mount the dataset if it's not mounted already
+	if strings.HasPrefix(mp, zfsVolumesDir) && false { // TODO: check if mounted
+		// TODO: lock & unlock by req.Name
+		if err := os.MkdirAll(mp, 0700); err != nil {
+			return nil, err
+		}
+
+		if err := mount(req.Name, mp, "zfs", 0, ""); err != nil {
+			return nil, fmt.Errorf("unable to mount '%s' to '%s': %w", req.Name, mp, err)
+		}
+	}
+
 	return &volume.MountResponse{Mountpoint: mp}, nil
 }
 
 // Unmount does nothing because a zfs dataset need not be unmounted
 func (zd *ZfsDriver) Unmount(req *volume.UnmountRequest) error {
 	zap.L().Debug("Unmount", zap.String("ID", req.ID), zap.String("Name", req.Name))
+	// TODO: lock & unlock by req.Name
 	return nil
 }
 
