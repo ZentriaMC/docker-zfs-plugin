@@ -18,6 +18,12 @@
       rec {
         packages.docker-zfs-plugin = pkgs.callPackage ./. { };
         defaultPackage = packages.docker-zfs-plugin;
+
+        checks.vm = pkgs.callPackage ./test/vm.nix {
+          inherit system;
+          dockerZfsPluginModule = self.nixosModule;
+          dockerZfsPluginOverlay = self.overlay;
+        };
       })) // {
       overlay = import ./nixos/overlay.nix;
       nixosModule = import ./nixos/module.nix;
