@@ -10,6 +10,11 @@
         "aarch64-linux"
         "x86_64-linux"
       ];
+
+      allSystems = supportedSystems ++ [
+        "aarch64-darwin"
+        "x86_64-darwin"
+      ];
     in
     (flake-utils.lib.eachSystem supportedSystems (system:
       let
@@ -24,7 +29,16 @@
           dockerZfsPluginModule = self.nixosModule;
           dockerZfsPluginOverlay = self.overlay;
         };
-      })) // {
+      })) // (flake-utils.lib.eachSystem allSystems (system:
+      let
+        pkgs = nixpkgs.legacyPackages.${system};
+      in
+      {
+        devShell = pkgs.mkShell {
+          buildInputs = with pkgs; [ go golangci-lint gopls ];
+        };
+      }
+    )) // {
       overlay = import ./nixos/overlay.nix;
       nixosModule = import ./nixos/module.nix;
     };
