@@ -5,7 +5,7 @@ buildGoModule rec {
 
   src = lib.cleanSource ./.;
 
-  vendorSha256 = "1kajw2qvxlp0p1x4ixh1f318rg93qn5fs21mgz6p05rqcb0mr5k9";
+  vendorSha256 = "sha256-wK4nN+x9YdUgCAMPlWUj5E34txergeLlaapT+282ES8=";
   subPackages = [ "." ];
 
   meta = with lib; {
