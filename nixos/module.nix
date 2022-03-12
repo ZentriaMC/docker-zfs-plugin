@@ -2,7 +2,7 @@
 
 with lib;
 let
-  zfs-cfg = config.services.docker-zfs-plugin;
+  cfg = config.services.docker-zfs-plugin;
 in
 {
   options = {
@@ -22,11 +22,11 @@ in
   config = {
     assertions = [
       {
-        assertion = zfs-cfg.enable -> (zfs-cfg.datasets != [ ]);
+        assertion = cfg.enable -> (cfg.datasets != [ ]);
         message = "Must specify atleast one dataset when Docker ZFS volume plugin is desired";
       }
       {
-        assertion = zfs-cfg.enable -> config.boot.zfs.enabled;
+        assertion = cfg.enable -> config.boot.zfs.enabled;
         message = "ZFS support must be enabled for docker-zfs-plugin to work";
       }
     ];
@@ -35,14 +35,14 @@ in
       (import ./overlay.nix)
     ];
 
-    systemd.services.docker-zfs-plugin = mkIf zfs-cfg.enable {
+    systemd.services.docker-zfs-plugin = mkIf cfg.enable {
       description = "Docker volume plugin for creating persistent volumes as a dedicated zfs datasets.";
       serviceConfig = {
         Restart = "on-abnormal";
-        ExecStart = "${pkgs.docker-zfs-plugin}/bin/docker-zfs-plugin "
-          + "${lib.optionalString zfs-cfg.debug "--debug"} "
-          + "${lib.optionalString zfs-cfg.snapshotOnCreate "--snapshot-on-create"} "
-          + "${concatMapStrings (x: " --dataset-name " + x) zfs-cfg.datasets}";
+        ExecStart = with cfg; toString ([ "${pkgs.docker-zfs-plugin}/bin/docker-zfs-plugin" ]
+          ++ lib.optional debug "--debug"
+          ++ lib.optional snapshotOnCreate "--snapshot-on-create"
+          ++ map (d: " --dataset-name " + d) datasets);
       };
 
       after = [ "docker-zfs-plugin.socket" ];
@@ -50,7 +50,7 @@ in
       path = [ pkgs.zfs ];
     };
 
-    systemd.sockets.docker-zfs-plugin = mkIf zfs-cfg.enable {
+    systemd.sockets.docker-zfs-plugin = mkIf cfg.enable {
       description = "docker-zfs-plugin listen socket";
       wantedBy = [ "sockets.target" ];
       requires = [ "docker.socket" ];
