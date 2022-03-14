@@ -38,7 +38,8 @@
         };
       }
     )) // {
-      overlay = import ./nixos/overlay.nix;
+      overlays.docker-zfs-plugin = import ./nixos/overlay.nix;
+      overlay = self.overlays.docker-zfs-plugin;
       nixosModules.docker-zfs-plugin = import ./nixos/module.nix;
       nixosModule = self.nixosModules.docker-zfs-plugin;
     };
