@@ -20,4 +20,4 @@ require (
 	golang.org/x/sys v0.0.0-20220310020820-b874c991c1a5 // indirect
 )
 
-replace github.com/docker/go-plugins-helpers => github.com/clinta/go-plugins-helpers v0.0.0-20200221140445-4667bb9f0ed5 // for shutdown
+replace github.com/docker/go-plugins-helpers => github.com/clinta/go-plugins-helpers v0.0.0-20180116160015-61cb8e233420 // for shutdown

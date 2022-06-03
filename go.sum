@@ -6,6 +6,8 @@ github.com/benbjohnson/clock v1.1.0 h1:Q92kusRqC1XV2MjkWETPvjJVqKetz1OzxZB7mHJLj
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
 github.com/c9s/goprocinfo v0.0.0-20210130143923-c95fcf8c64a8 h1:SjZ2GvvOononHOpK84APFuMvxqsk3tEIaKH/z4Rpu3g=
 github.com/c9s/goprocinfo v0.0.0-20210130143923-c95fcf8c64a8/go.mod h1:uEyr4WpAH4hio6LFriaPkL938XnrvLpNPmQHBdrmbIE=
+github.com/clinta/go-plugins-helpers v0.0.0-20180116160015-61cb8e233420 h1:3XTL8EYmkdb9Y/It23NTna6KmUnSyYGdOZTEV4pKCdo=
+github.com/clinta/go-plugins-helpers v0.0.0-20180116160015-61cb8e233420/go.mod h1:S7P0QAZapeYuLzFzSov/e9ehFFnX/ivIDtD4nQB7+1U=
 github.com/clinta/go-plugins-helpers v0.0.0-20200221140445-4667bb9f0ed5 h1:STA9F+EPT0+eLSpUYBAst5PJMgtPo1PNLqRYRyJtkK4=
 github.com/clinta/go-plugins-helpers v0.0.0-20200221140445-4667bb9f0ed5/go.mod h1:S7P0QAZapeYuLzFzSov/e9ehFFnX/ivIDtD4nQB7+1U=
 github.com/clinta/go-zfs v0.0.0-20181025145938-e5fe14d9dcb7 h1:CoyMbd4slqWuH2n1C7q4hKrm4vy21jN5vS0qwQRA0gA=
