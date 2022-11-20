@@ -7,7 +7,7 @@ require (
 	github.com/c9s/goprocinfo v0.0.0-20210130143923-c95fcf8c64a8
 	github.com/clinta/go-zfs v0.0.0-20181025145938-e5fe14d9dcb7
 	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf // indirect
-	github.com/coreos/go-systemd/v22 v22.3.2
+	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-plugins-helpers v0.0.0-20211224144127-6eecb7beb651
