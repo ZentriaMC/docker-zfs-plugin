@@ -14,8 +14,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/urfave/cli/v2 v2.4.5
 	go.uber.org/atomic v1.9.0 // indirect
-	go.uber.org/multierr v1.8.0 // indirect
-	go.uber.org/zap v1.21.0
+	go.uber.org/zap v1.27.0
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
 	golang.org/x/sys v0.0.0-20220310020820-b874c991c1a5 // indirect
 )
