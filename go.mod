@@ -10,7 +10,7 @@ require (
 	github.com/coreos/go-systemd/v22 v22.3.2
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
-	github.com/docker/go-plugins-helpers v0.0.0-20211224144127-6eecb7beb651
+	github.com/docker/go-plugins-helpers v0.0.0-20240701071450-45e2431495c8
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/urfave/cli/v2 v2.4.5
 	go.uber.org/atomic v1.9.0 // indirect
