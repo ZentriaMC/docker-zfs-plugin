@@ -1,14 +1,12 @@
 { lib, buildGoModule }:
-buildGoModule rec {
+buildGoModule {
   pname = "docker-zfs-plugin";
-  version = "2.0.0";
+  version = "3.0.0";
 
   src = lib.cleanSource ./.;
 
-  vendorSha256 = "sha256-/oAk/gFNlS4zRBMrp1KWeyeunDKgV+p6C+jP+OwcfGg=";
+  vendorHash = "sha256-9bIVchjrNqXDYdLLS634QVqXmpR4NQ4ANeiwkkLEi+E=";
   subPackages = [ "." ];
 
-  meta = with lib; {
-    supportedPlatforms = platforms.linux;
-  };
+  meta = with lib; { supportedPlatforms = platforms.linux; };
 }

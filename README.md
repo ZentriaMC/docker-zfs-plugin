@@ -2,32 +2,22 @@
 
 Docker volume plugin for creating persistent volumes as dedicated zfs datasets.
 
-This is a fork of [TrilliumIT/docker-zfs-plugin](https://github.com/TrilliumIT/docker-zfs-plugin)
+This is a fork of [ZentriaMC/docker-zfs-plugin](https://github.com/ZentriaMC/docker-zfs-plugin), which is a fork of [TrilliumIT/docker-zfs-plugin](https://github.com/TrilliumIT/docker-zfs-plugin).
 
 ## Installation
 
-Assuming you use NixOS
-
-```nix
-{
-  imports = [
-    (import "${builtins.fetchTarball "https://github.com/ZentriaMC/docker-zfs-plugin/archive/master.tar.gz"}/nixos")
-  ];
-
-  services.docker-zfs-plugin = {
-    enable = true;
-    datasets = [ "dpool" ];
-  };
-}
+Create a dataset with `mountpoint=legacy` which is used as the root for all other datasets created by this driver:
+```sh
+zfs create -p -o mountpoint=legacy pool/my/root/dataset/for/docker
 ```
 
-Or with Nix Flakes:
+Assuming you use NixOS:
 
 ```nix
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    docker-zfs-plugin.url = "github:ZentriaMC/docker-zfs-plugin";
+    docker-zfs-plugin.url = "github:ReneHollander/docker-zfs-plugin";
 
     docker-zfs-plugin.inputs.nixpkgs.follows = "nixpkgs";
   };
@@ -43,10 +33,31 @@ Or with Nix Flakes:
 }
 ```
 
+Configure the service:
+
+```nix
+{
+  services.docker-zfs-plugin = {
+    enable = true;
+    datasets = [ "pool/my/root/dataset/for/docker" ];
+    mountDir = "/tmp/docker-volumes/zfs";
+  };
+}
+```
+
 ## Usage
 
-After the plugin is running, you can interact with it through normal `docker volume` commands. Driver name is `zfs`
+Example docker-compose.yml
 
-You can pass in ZFS attributes from the `docker volume create` command:
-
-`docker volume create -d zfs -o compression=lz4 -o dedup=on --name=tank/docker-volumes/data`
+```yml
+services:
+  mycontainer:
+    # ...
+    volumes:
+      - myvolume:/workingdir
+    # ...
+volumes:
+  myvolume:
+    driver: zfs
+    name: "pool/my/root/dataset/for/docker/myvolume"
+```

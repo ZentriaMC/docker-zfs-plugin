@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -13,14 +14,12 @@ import (
 	"github.com/coreos/go-systemd/v22/activation"
 	"github.com/docker/go-plugins-helpers/volume"
 	"github.com/urfave/cli/v2"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 
-	zfsdriver "github.com/ZentriaMC/docker-zfs-plugin/zfs"
+	zfsdriver "github.com/ReneHollander/docker-zfs-plugin/zfs"
 )
 
 const (
-	version         = "1.0.5"
+	version         = "3.0.0"
 	shutdownTimeout = 10 * time.Second
 )
 
@@ -34,14 +33,9 @@ func main() {
 				Name:  "dataset-name",
 				Usage: "Name of the ZFS dataset to be used. It will be created if it doesn't exist.",
 			},
-			&cli.BoolFlag{
-				Name:    "debug",
-				Usage:   "Whether to run plugin with debugging logging enabled or not",
-				Aliases: []string{"verbose"},
-			},
-			&cli.BoolFlag{
-				Name:  "snapshot-on-create",
-				Usage: "Whether to create a snapshot immediately after creating a new dataset",
+			&cli.StringFlag{
+				Name:  "mount-dir",
+				Usage: "Path to the directory where datasets will be mounted.",
 			},
 		},
 		Action: Run,
@@ -58,13 +52,7 @@ func Run(ctx *cli.Context) error {
 		return fmt.Errorf("zfs dataset name is a required field")
 	}
 
-	// Configure logging
-	if err := configureLogging(ctx.Bool("debug")); err != nil {
-		return err
-	}
-	defer func() { _ = zap.L().Sync() }()
-
-	d, err := zfsdriver.NewZfsDriver(ctx.Bool("snapshot-on-create"), ctx.StringSlice("dataset-name")...)
+	d, err := zfsdriver.NewZfsDriver(ctx.String("mount-dir"), ctx.StringSlice("dataset-name")...)
 	if err != nil {
 		return err
 	}
@@ -73,14 +61,14 @@ func Run(ctx *cli.Context) error {
 
 	listeners, _ := activation.Listeners() // wtf coreos, this funciton never returns errors
 	if len(listeners) > 1 {
-		zap.L().Warn("driver does not support multiple sockets")
+		slog.Warn("driver does not support multiple sockets")
 	}
 	if len(listeners) == 0 {
-		zap.L().Debug("launching volume handler.")
+		slog.Info("starting volume handler")
 		go func() { errCh <- h.ServeUnix("zfs", 0) }()
 	} else {
 		l := listeners[0]
-		zap.L().Debug("launching volume handler", zap.String("listener", l.Addr().String()))
+		slog.Info("starting volume handler", "listener", l.Addr().String())
 		go func() { errCh <- h.Serve(l) }()
 	}
 
@@ -91,7 +79,7 @@ func Run(ctx *cli.Context) error {
 
 	select {
 	case err = <-errCh:
-		zap.L().Error("error running handler", zap.Error(err))
+		slog.Error("error running handler", "error", err)
 		close(errCh)
 	case <-c:
 	}
@@ -100,47 +88,13 @@ func Run(ctx *cli.Context) error {
 	defer toCtxCancel()
 	if sErr := h.Shutdown(toCtx); sErr != nil {
 		err = sErr
-		zap.L().Error("error shutting down handler", zap.Error(err))
+		slog.Error("error shutting down handler", "error", err)
 	}
 
 	if hErr := <-errCh; hErr != nil && !errors.Is(hErr, http.ErrServerClosed) {
 		err = hErr
-		zap.L().Error("error in handler after shutdown", zap.Error(err))
+		slog.Error("error in handler after shutdown", "error", err)
 	}
 
 	return err
-}
-
-func configureLogging(debug bool) error {
-	var cfg zap.Config
-
-	if debug {
-		cfg = zap.NewDevelopmentConfig()
-		cfg.Level.SetLevel(zapcore.DebugLevel)
-	} else {
-		cfg = zap.NewProductionConfig()
-		cfg.Level.SetLevel(zapcore.InfoLevel)
-	}
-
-	cfg.Encoding = "console"
-	cfg.OutputPaths = []string{
-		"stdout",
-	}
-
-	logger, err := cfg.Build()
-	if err != nil {
-		return err
-	}
-
-	zap.ReplaceGlobals(logger)
-	if debug {
-		zap.L().Debug("debug logging enabled")
-	}
-
-	// Redirect native logger to zap debug level
-	if _, err := zap.RedirectStdLogAt(logger, zapcore.DebugLevel); err != nil {
-		return err
-	}
-
-	return nil
 }

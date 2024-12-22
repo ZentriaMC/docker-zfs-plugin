@@ -1,5 +1,0 @@
-[Socket]
-ListenStream=/run/docker/plugins/zfs.sock
-
-[Install]
-WantedBy = sockets.target
